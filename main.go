@@ -26,11 +26,25 @@ func main() {
 router.Use(CORSMiddleware())
 
     router.GET("/bills", getBills)
+	router.POST("bill", postBill)
     router.Run("localhost:8080")
 	
 }
 
 
+func postBill(c *gin.Context) {
+    var newBill bill
+
+    // Call BindJSON to bind the received JSON to
+    // newBill.
+    if err := c.BindJSON(&newBill); err != nil {
+        return
+    }
+
+    // Add the new bill to the slice.
+    bills = append(bills, newBill)
+    c.IndentedJSON(http.StatusCreated, newBill)
+}
 
 // bill represents data about a record bill.
 type bill struct {

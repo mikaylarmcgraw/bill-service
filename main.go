@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,7 +11,7 @@ func CORSMiddleware() gin.HandlerFunc {
 
         c.Header("Access-Control-Allow-Origin", "*")
 
-        c.Header("Access-Control-Allow-Methods", "POST,HEAD,PATCH, OPTIONS, GET, PUT, DELETE")
+        c.Header("Access-Control-Allow-Methods", "POST, PUT, HEAD, PATCH, OPTIONS, GET, DELETE")
 
         if c.Request.Method == "OPTIONS" {
             c.AbortWithStatus(204)
@@ -27,7 +28,8 @@ func main() {
 
     router.GET("/bills", getBills)
 	  router.GET("/bill/:id", getBillByID)
-	  router.POST("bill", postBill)
+	  router.POST("/bill", postBill)
+    router.PUT("/bill", updateBill)
     router.DELETE("/bill/:id", deleteBillByID)
     router.Run("localhost:8080")
 	
@@ -159,6 +161,29 @@ func deleteBillByID(c *gin.Context) {
         if a.ID == id {
             bills = append(bills[:i], bills[i+1:]...)
             c.IndentedJSON(http.StatusOK,  gin.H{"message": "bill successfully deleted"})
+            return
+        }
+    }
+    c.IndentedJSON(http.StatusNotFound, gin.H{"message": "bill not found"})
+}
+
+// getBillByID locates the bill whose ID value matches the id and delete item from list
+// parameter sent by the client, then deletes the bill and returns a response
+func updateBill(c *gin.Context) {
+    
+  var updatedBill bill
+
+    if err := c.BindJSON(&updatedBill); err != nil {
+      fmt.Println("error getting json")
+      return
+    }
+    // Loop over the list of albums, looking for
+    // an album whose ID value matches the parameter.
+    for i, a := range bills {
+        if a.ID == updatedBill.ID {
+            bills[i].Amount = updatedBill.Amount
+            bills[i].Name = updatedBill.Name
+            c.IndentedJSON(http.StatusOK,  gin.H{"message": "bill updated successfully."})
             return
         }
     }

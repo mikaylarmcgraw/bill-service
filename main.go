@@ -1,11 +1,45 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/lib/pq"
 )
+
+var db *sql.DB
+
+const (
+  host     = "localhost"
+  port     = 5432
+  user     = "test_user"
+  password = "password"
+  dbname   = "bill-services"
+)
+
+
+func ConnectDB() {
+  psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+    "password=%s dbname=%s sslmode=disable",
+    host, port, user, password, dbname)
+    fmt.Println("connection string: ", psqlInfo)
+  db, err := sql.Open("postgres", psqlInfo)
+  if err != nil {
+    panic(err)
+  }
+
+  err = db.Ping()
+  if err != nil {
+    panic(err)
+  }
+
+  fmt.Println("Successfully connected!")
+
+}
+
 func CORSMiddleware() gin.HandlerFunc {
     return func(c *gin.Context) {
 
@@ -23,6 +57,7 @@ func CORSMiddleware() gin.HandlerFunc {
 }
 
 func main() {
+    ConnectDB()
     router := gin.Default()
     router.Use(CORSMiddleware())
 
@@ -131,7 +166,17 @@ var bills = []bill{
 
 // getAlbums responds with the list of all albums as JSON.
 func getBills(c *gin.Context) {
-    c.IndentedJSON(http.StatusOK, bills)
+  	
+  rows, err := db.Query("SELECT * FROM bill")
+  fmt.Println("rows : ", rows)
+  
+  if err != nil {
+		log.Fatal(err)
+	}
+  	defer rows.Close()
+
+    c.IndentedJSON(http.StatusOK, rows)
+
 }
 
 // getBillByID locates the bill whose ID value matches the id
